@@ -8,7 +8,7 @@
 #include <yaml.h>
 
 #include "ShutdownManager.hpp"
-#include "CometService.hpp"
+#include "CometReadService.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -95,10 +95,12 @@ int main(int argc, const char **argv)
         msg << "Number of threads: " << numThreads;
         PION_LOG_INFO(main_log, msg.str());
 
-        WebServer web_server(scheduler, endpoint);
-        plugins::CometService comet_service;
-        web_server.addService("/", dynamic_cast<WebService *>(&comet_service));
-        web_server.start();
+        plugins::CometReadService cometReadService;
+
+        WebServer webServer(scheduler, endpoint);
+        webServer.addService("/read", 
+            dynamic_cast<WebService *>(&cometReadService));
+        webServer.start();
         main_shutdown_manager.wait();
     } catch (std::exception& e) {
         PION_LOG_FATAL(main_log, e.what());
