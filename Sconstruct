@@ -1,0 +1,33 @@
+env = Environment(
+    CPPPATH=[
+        'include', 
+        'dependencies/pion-net-3.0.17/net/include', 
+        'dependencies/pion-net-3.0.17/common/include'
+    ], 
+    CCFLAGS=['-pthread', '-O3', '-UPION_HAVE_SSL'],
+    CFLAGS=['-pthread', '-O3', '-UPION_HAVE_SSL'],
+    CPPFLAGS=['-pthread', '-O3', '-UPION_HAVE_SSL'],
+    LINKFLAGS=['-pthread', '-UPION_HAVE_SSL'],
+    LIBS=[
+        'dl',
+        'ssl',
+        'z',
+        'bz2',
+        'log4cplus',
+        'boost_thread-mt',
+        'boost_system-mt',
+        'boost_filesystem-mt',
+        'boost_regex-mt',
+        'boost_date_time-mt',
+        'boost_signals-mt',
+        'boost_iostreams-mt',
+        'pion-net',
+        'pion-common',
+    ]
+
+)
+
+SConscript(['dependencies/pion-net-3.0.17/Sconstruct'])
+
+#env.ParseConfig('pkg-config --cflags --libs pion-net')
+env.Program('lite_comet', Glob('src/*.cpp'), LIBPATH=['dependencies/pion-net-3.0.17/'])

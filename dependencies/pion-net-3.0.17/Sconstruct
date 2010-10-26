@@ -1,0 +1,18 @@
+import os
+env = Environment(
+    CCFLAGS=['-O3', '-UPION_HAVE_SSL']
+)
+
+pion_common = env.StaticLibrary(
+    'pion-common', 
+    Glob('common/src/*.cpp'), 
+    CPPPATH=['common/include']
+)
+pion_net = env.StaticLibrary(
+    'pion-net', 
+    Glob('net/src/*.cpp'), 
+    CPPPATH=['net/include', 'common/include']
+)
+
+env.Install('/usr/local/lib', [pion_common, pion_net])
+env.Alias('install', [pion_common, pion_net])

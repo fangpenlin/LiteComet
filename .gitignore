@@ -1,0 +1,5 @@
+*.o
+*.so
+.sconsign.dblite
+dependencies/pion-net-3.0.17/net/doc/
+dependencies/pion-net-3.0.17/common/doc/
