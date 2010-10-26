@@ -1,6 +1,6 @@
 import os
 env = Environment(
-    CCFLAGS=['-O3']
+    CCFLAGS=['-O3', '-Wall']
 )
 
 pion_common = env.StaticLibrary(

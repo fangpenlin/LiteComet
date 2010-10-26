@@ -1,14 +1,17 @@
 env = Environment(
+    PION_HOME='dependencies/pion-net-3.0.17'
+)
+
+env.Append(
     CPPPATH=[
         'include', 
-        'dependencies/pion-net-3.0.17/net/include', 
-        'dependencies/pion-net-3.0.17/common/include'
+        env.subst('$PION_HOME/net/include'), 
+        env.subst('$PION_HOME/common/include')
     ], 
-    CCFLAGS=['-pthread', '-O3'],
+    CCFLAGS=['-pthread', '-O3', '-Wall'],
     LINKFLAGS=['-pthread'],
     LIBS=[
         'dl',
-        'ssl',
         'z',
         'bz2',
         'log4cplus',
@@ -22,10 +25,15 @@ env = Environment(
         'pion-net',
         'pion-common',
     ]
-
 )
 
-SConscript(['dependencies/pion-net-3.0.17/Sconstruct'])
+SConscript([env.subst('$PION_HOME/Sconstruct')])
 
-#env.ParseConfig('pkg-config --cflags --libs pion-net')
-env.Program('lite_comet', Glob('src/*.cpp'), LIBPATH=['dependencies/pion-net-3.0.17/'])
+# parse configuration for yaml-cpp
+env.ParseConfig('pkg-config --cflags --libs yaml-cpp')
+
+env.Program(
+    'lite_comet', 
+    Glob('src/*.cpp'), 
+    LIBPATH=[env.subst('$PION_HOME')]
+)

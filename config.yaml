@@ -1,0 +1,12 @@
+---
+# Server relative configuration
+server:
+    # port for running the server
+    port: 8080
+    
+    # interface to run the server
+    interface: 0.0.0.0
+
+    # how many threads to run io_service
+    numThreads: 1
+...

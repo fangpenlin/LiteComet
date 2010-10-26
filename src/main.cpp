@@ -1,74 +1,101 @@
+#include <sstream>
 #include <iostream>
+#include <fstream>
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <pion/net/WebServer.hpp>
-#include <ShutdownManager.hpp>
-#include <EchoService.hpp>
-#include <sstream>
+#include <yaml.h>
+
+#include "ShutdownManager.hpp"
+#include "EchoService.hpp"
 
 using namespace std;
+using namespace boost::asio;
 using namespace pion;
 using namespace pion::net;
+using namespace YAML;
 
+/**
+    @brief Print usage of this program
+**/
+void printUsage() {
+    cout << "Usage: lite_comet [config.yaml]" << endl;
+}
 
-/// simple TCP server that just sends "Hello there!" to each connection
-class HelloServer : public TCPServer {
-public:
-    HelloServer(const unsigned int tcp_port) : TCPServer(tcp_port) {}
-    virtual ~HelloServer() {}
-    virtual void handleConnection(TCPConnectionPtr& tcp_conn)
-    {
-        static const std::string HELLO_MESSAGE("Hello there!\x0D\x0A");
-        tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);	// make sure it will get closed
-        tcp_conn->async_write(boost::asio::buffer(HELLO_MESSAGE),
-							  boost::bind(&TCPConnection::finish, tcp_conn));
-    }
-};
-
-
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
-std::string output;
-#if defined(BOOST_ASIO_HAS_IOCP)
-  output = "iocp" ;
-#elif defined(BOOST_ASIO_HAS_EPOLL)
-  output = "epoll" ;
-#elif defined(BOOST_ASIO_HAS_KQUEUE)
-  output = "kqueue" ;
-#elif defined(BOOST_ASIO_HAS_DEV_POLL)
-  output = "/dev/poll" ;
-#else
-  output = "select" ;
-#endif
-    std::cout << output << std::endl;
+    // Port number to run server
+    unsigned int port = 8080;
+    // Network interface to run server
+    string interface = "0.0.0.0";
+    // Number of threads to run
+    size_t numThreads = 1;
 
-#ifdef PION_HAVE_SSL 
-        std::cout << "HAVE_SSL" << std::endl; 
-#else 
-        std::cout << "DO NOT HAVE_SSL" << std::endl; 
-#endif
-   std::cout << PION_VERSION << std::endl;
-
-
-    static const unsigned int DEFAULT_PORT = 8080;
-
-    // initialize log system (use simple configuration)
+    // Initialize log system (use simple configuration)
     PionLogger main_log(PION_GET_LOGGER("PionHelloServer"));
     PionLogger pion_log(PION_GET_LOGGER("pion"));
     PION_LOG_SETLEVEL_INFO(main_log);
     PION_LOG_SETLEVEL_INFO(pion_log);
     PION_LOG_CONFIG_BASIC;
 
-    try {
-        size_t numThreads;
-        istringstream stream(argv[1]);
-        stream >> numThreads;
-        cout << "Number of threads: " << numThreads << endl;
+    PION_LOG_INFO(main_log, "Initialize Lite Comet server");
 
+    string configFileName = "config.yaml";
+    // Get the configuration file name from args
+    if(argc == 2) {
+        configFileName = argv[1];
+    } else if(argc > 2) {
+        printUsage();
+        return 0;
+    }
+
+    stringstream msg;
+    msg << "Loading configuration from " << configFileName;
+    PION_LOG_INFO(main_log, msg.str());
+
+    ifstream yamlFile(configFileName.c_str());
+    Parser parser(yamlFile);
+
+    // Read the configuration yaml doc
+    Node doc;
+    parser.GetNextDocument(doc);
+
+    // Configuration for server
+    if(const Node *pServerNode = doc.FindValue("server")) {
+        PION_LOG_INFO(main_log, "Loading server config");
+        // Read port number
+        if(const Node *pPortNode = pServerNode->FindValue("port")) {
+            *pPortNode >> port;
+        }
+        // Read interface
+        if(const Node *pInterfaceNode = pServerNode->FindValue("interface")) {
+            *pInterfaceNode >> interface;
+        }
+        // Read number of threads 
+        if(const Node *pNumThreads = pServerNode->FindValue("numThreads")) {
+            *pNumThreads >> numThreads;
+        }
+    } else {
+        PION_LOG_WARN(main_log, 
+            "Can't find server setting in configuration file.");
+    }
+
+    try {
+        // Address of interface
+        const ip::address address(ip::address::from_string(interface));
+        // Endpoint to listen
+        const ip::tcp::endpoint endpoint(address, port);
+
+        // Cocurrency model
         PionOneToOneScheduler scheduler;
         scheduler.setNumThreads(numThreads);
+        
+        stringstream msg;
+        msg << "Number of threads: " << numThreads;
+        PION_LOG_INFO(main_log, msg.str());
 
-        WebServer web_server(scheduler, DEFAULT_PORT);
+        WebServer web_server(scheduler, endpoint);
         plugins::EchoService echo_service;
         web_server.addService("/", dynamic_cast<WebService *>(&echo_service));
         web_server.start();
@@ -77,5 +104,5 @@ std::string output;
         PION_LOG_FATAL(main_log, e.what());
     }
 
-    cout << "Hello" << endl;
+    return 0;
 }
