@@ -8,7 +8,7 @@
 #include <yaml.h>
 
 #include "ShutdownManager.hpp"
-#include "EchoService.hpp"
+#include "CometService.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -96,8 +96,8 @@ int main(int argc, const char **argv)
         PION_LOG_INFO(main_log, msg.str());
 
         WebServer web_server(scheduler, endpoint);
-        plugins::EchoService echo_service;
-        web_server.addService("/", dynamic_cast<WebService *>(&echo_service));
+        plugins::CometService comet_service;
+        web_server.addService("/", dynamic_cast<WebService *>(&comet_service));
         web_server.start();
         main_shutdown_manager.wait();
     } catch (std::exception& e) {

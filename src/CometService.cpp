@@ -7,7 +7,7 @@
 // See http://www.boost.org/LICENSE_1_0.txt
 //
 
-#include "EchoService.hpp"
+#include "CometService.hpp"
 #include <boost/bind.hpp>
 #include <pion/net/HTTPResponseWriter.hpp>
 #include <pion/net/PionUser.hpp>
@@ -31,10 +31,10 @@ void writeDictionaryTerm(HTTPResponseWriterPtr& writer,
 }
 
 
-// EchoService member functions
+// CometService member functions
 
 /// handles requests for EchoService
-void EchoService::operator()(HTTPRequestPtr& request, TCPConnectionPtr& tcp_conn)
+void CometService::operator()(HTTPRequestPtr& request, TCPConnectionPtr& tcp_conn)
 {
     // this web service uses static text to test the mixture of "copied" with
     // "static" (no-copy) text
@@ -52,10 +52,6 @@ void EchoService::operator()(HTTPRequestPtr& request, TCPConnectionPtr& tcp_conn
     
     // write request information
     writer->writeNoCopy(REQUEST_ECHO_TEXT);
-    writer->send();
-    return;
-
-
     writer->writeNoCopy(HTTPTypes::STRING_CRLF);
     writer->writeNoCopy(HTTPTypes::STRING_CRLF);
     writer
@@ -130,17 +126,4 @@ void EchoService::operator()(HTTPRequestPtr& request, TCPConnectionPtr& tcp_conn
 
 }   // end namespace plugins
 }   // end namespace pion
-
-
-/// creates new EchoService objects
-extern "C" PION_SERVICE_API pion::plugins::EchoService *pion_create_EchoService(void)
-{
-    return new pion::plugins::EchoService();
-}
-
-/// destroys EchoService objects
-extern "C" PION_SERVICE_API void pion_destroy_EchoService(pion::plugins::EchoService *service_ptr)
-{
-    delete service_ptr;
-}
 

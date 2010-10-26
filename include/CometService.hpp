@@ -7,8 +7,8 @@
 // See http://www.boost.org/LICENSE_1_0.txt
 //
 
-#ifndef __PION_ECHOSERVICE_HEADER__
-#define __PION_ECHOSERVICE_HEADER__
+#ifndef __PION_COMETSERVICE_HEADER__
+#define __PION_COMETSERVICE_HEADER__
 
 #include <pion/net/WebService.hpp>
 
@@ -16,15 +16,15 @@
 namespace pion {        // begin namespace pion
 namespace plugins {     // begin namespace plugins
 
-///
-/// EchoService: web service that echos back requests (to test request parsing)
-/// 
-class EchoService :
+/**
+    HTTP Service for Ajax/Comet data transfer
+**/
+class CometService :
     public pion::net::WebService
 {
 public:
-    EchoService(void) {}
-    virtual ~EchoService() {}
+    CometService(void) {}
+    virtual ~CometService() {}
     virtual void operator()(pion::net::HTTPRequestPtr& request,
                             pion::net::TCPConnectionPtr& tcp_conn);
 };
