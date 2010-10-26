@@ -7,8 +7,8 @@
 // See http://www.boost.org/LICENSE_1_0.txt
 //
 
+#include <boost/bind.hpp>
 #include <pion/net/TCPTimer.hpp>
-
 
 namespace pion {	// begin namespace pion
 namespace net {		// begin namespace net (Pion Network Library)

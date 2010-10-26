@@ -4,10 +4,8 @@ env = Environment(
         'dependencies/pion-net-3.0.17/net/include', 
         'dependencies/pion-net-3.0.17/common/include'
     ], 
-    CCFLAGS=['-pthread', '-O3', '-UPION_HAVE_SSL'],
-    CFLAGS=['-pthread', '-O3', '-UPION_HAVE_SSL'],
-    CPPFLAGS=['-pthread', '-O3', '-UPION_HAVE_SSL'],
-    LINKFLAGS=['-pthread', '-UPION_HAVE_SSL'],
+    CCFLAGS=['-pthread', '-O3'],
+    LINKFLAGS=['-pthread'],
     LIBS=[
         'dl',
         'ssl',

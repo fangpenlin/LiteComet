@@ -1,6 +1,6 @@
 import os
 env = Environment(
-    CCFLAGS=['-O3', '-UPION_HAVE_SSL']
+    CCFLAGS=['-O3']
 )
 
 pion_common = env.StaticLibrary(
