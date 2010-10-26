@@ -7,11 +7,16 @@
 // See http://www.boost.org/LICENSE_1_0.txt
 //
 
-#include "CometService.hpp"
 #include <boost/bind.hpp>
 #include <pion/net/HTTPResponseWriter.hpp>
 #include <pion/net/PionUser.hpp>
+#include "CometService.hpp"
 
+// XXX just for test now
+#include <vector>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+using namespace boost;
 using namespace pion;
 using namespace pion::net;
 
@@ -30,6 +35,20 @@ void writeDictionaryTerm(HTTPResponseWriterPtr& writer,
     << HTTPTypes::STRING_CRLF;
 }
 
+// XXX just for keep reference to connection, 
+// so that it will not be deleted
+std::vector<TCPConnectionPtr> tcpConnections;
+
+
+// XXX delay write to peer
+static void delayWrite(
+    const boost::system::error_code& e,
+    HTTPResponseWriterPtr writer 
+) {
+    writer->writeNoCopy("Time is up!");
+    writer->send(boost::bind(&TCPConnection::finish, writer->getTCPConnection()));
+    std::cout << "Time up!" << std::endl;
+}
 
 // CometService member functions
 
@@ -46,9 +65,36 @@ void CometService::operator()(HTTPRequestPtr& request, TCPConnectionPtr& tcp_con
     static const std::string USER_INFO_TEXT("[USER Info]");
     
     // Set Content-type to "text/plain" (plain ascii text)
-    HTTPResponseWriterPtr writer(HTTPResponseWriter::create(tcp_conn, *request,
-                                                            boost::bind(&TCPConnection::finish, tcp_conn)));
+    HTTPResponseWriterPtr writer(
+        HTTPResponseWriter::create(
+            tcp_conn, 
+            *request
+            //boost::bind(&TCPConnection::finish, tcp_conn)
+        )
+    );
     writer->getResponse().setContentType(HTTPTypes::CONTENT_TYPE_TEXT);
+    // Do not send content length, because it is unknown now
+    writer->getResponse().setDoNotSendContentLength();
+    writer->send();
+    
+    std::cout << "####" << "Count down 5 seconds" << std::endl;
+    
+    // XXX WARNING we crerate a pointer and never delete it 
+    // it is just for test, because timer is triggered when
+    // it is destroied, therefore, if it is local variable,
+    // once we leave this scope, the timer is triggered
+    boost::asio::deadline_timer* pTimer = new boost::asio::deadline_timer(
+        tcp_conn->getIOService(), 
+        boost::posix_time::seconds(5)
+    );
+    pTimer->async_wait(
+        boost::bind(delayWrite, 
+            boost::asio::placeholders::error,
+            writer
+        )
+    );
+    tcpConnections.push_back(tcp_conn);
+    return;
     
     // write request information
     writer->writeNoCopy(REQUEST_ECHO_TEXT);
