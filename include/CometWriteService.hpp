@@ -1,14 +1,5 @@
-// ------------------------------------------------------------------
-// pion-net: a C++ framework for building lightweight HTTP interfaces
-// ------------------------------------------------------------------
-// Copyright (C) 2007-2008 Atomic Labs, Inc.  (http://www.atomiclabs.com)
-//
-// Distributed under the Boost Software License, Version 1.0.
-// See http://www.boost.org/LICENSE_1_0.txt
-//
-
-#ifndef __PION_COMETWRITESERVICE_HEADER__
-#define __PION_COMETWRITESERVICE_HEADER__
+#ifndef __LITE_COMET_COMETWRITESERVICE_HEADER__
+#define __LITE_COMET_COMETWRITESERVICE_HEADER__
 
 #include <set>
 

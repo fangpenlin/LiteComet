@@ -8,6 +8,7 @@
 #include <yaml.h>
 
 #include "ShutdownManager.hpp"
+#include "Channel.hpp"
 #include "CometReadService.hpp"
 #include "CometWriteService.hpp"
 
