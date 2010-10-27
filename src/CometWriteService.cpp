@@ -33,13 +33,17 @@ void CometWriteService::operator()(
     HTTPResponseWriterPtr writer(
         HTTPResponseWriter::create(
             tcp_conn, 
-            *request
+            *request,
+            bind(&TCPConnection::finish, tcp_conn)
         )
     );
-    const std::string data = request->getContent();
-    /// Notice: to send a empty string cause a Segmentation fault
-    if(!data.empty()) {
+    if(request->getContent()) {
+        const std::string data = request->getContent();
         m_readService.notifyAll(data);
+    } else {
+        // TODO: write bad request error herex
+        writer->write("Bad request");
+        writer->send();
     }
     
     // Set the content type as text

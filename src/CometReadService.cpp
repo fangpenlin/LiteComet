@@ -28,6 +28,7 @@ void CometReadService::notifyAll(const std::string data) {
         (*i)->write(data);
         (*i)->send(bind(&TCPConnection::finish, (*i)->getTCPConnection()));
     }
+    m_writers.clear();
 }
 
 /// handles requests for EchoService

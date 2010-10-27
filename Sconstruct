@@ -8,7 +8,6 @@ env.Append(
         env.subst('$PION_HOME/net/include'), 
         env.subst('$PION_HOME/common/include')
     ], 
-    CCFLAGS=['-pthread', '-O3', '-Wall'],
     LINKFLAGS=['-pthread'],
     LIBS=[
         'dl',
@@ -32,8 +31,15 @@ SConscript([env.subst('$PION_HOME/Sconstruct')])
 # parse configuration for yaml-cpp
 env.ParseConfig('pkg-config --cflags --libs yaml-cpp')
 
-env.Program(
-    'lite_comet', 
-    Glob('src/*.cpp'), 
-    LIBPATH=[env.subst('$PION_HOME')]
-)
+opt = env.Clone(CCFLAGS=['-pthread', '-O3', '-Wall', '-DNDEBUG'])
+opt.VariantDir('opt', 'src', duplicate=0)
+opt_objs = opt.Glob('opt/*.cpp')
+lite_comet = opt.Program('lite_comet', 
+    opt_objs, LIBPATH=[opt.subst('$PION_HOME')])
+
+dbg = env.Clone(CCFLAGS=['-pthread', '-Wall', '-g', '-O0', '-DDEBUG', '-D_DEBUG'])
+dbg.VariantDir('dbg', 'src', duplicate=0)
+dbg_objs = dbg.Glob('dbg/*.cpp')
+dbg_lite_comet = dbg.Program('dbg_lite_comet', 
+    dbg_objs, LIBPATH=[dbg.subst('$PION_HOME')])
+

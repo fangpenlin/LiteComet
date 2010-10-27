@@ -275,7 +275,13 @@ private:
 		HTTPMessage::WriteBuffers write_buffers;
 		prepareWriteBuffers(write_buffers, send_final_chunk);
 		// send data in the write buffers
-		m_tcp_conn->async_write(write_buffers, send_handler);
+        /** Notice: 
+            write an empty buffer to asio cause a Segmentation fault
+            therefore we need to make sure not to send an empty data
+        **/
+        if(!write_buffers.empty()) {
+    		m_tcp_conn->async_write(write_buffers, send_handler);
+        }
 	}
 	
 	/**
