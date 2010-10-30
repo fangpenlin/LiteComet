@@ -53,9 +53,7 @@ int main(int argc, const char **argv)
         return 0;
     }
 
-    stringstream msg;
-    msg << "Loading configuration from " << config_file_name;
-    PION_LOG_INFO(main_log, msg.str());
+    PION_LOG_INFO(main_log, "Loading configuration from " << config_file_name);
 
     ifstream yaml_file(config_file_name.c_str());
     Parser parser(yaml_file);
@@ -106,9 +104,7 @@ int main(int argc, const char **argv)
         PionOneToOneScheduler scheduler;
         scheduler.setNumThreads(numThreads);
         
-        stringstream msg;
-        msg << "Number of threads: " << numThreads;
-        PION_LOG_INFO(main_log, msg.str());
+        PION_LOG_INFO(main_log, "Number of threads: " << numThreads);
 
         ChannelManager channel_manager;
 
