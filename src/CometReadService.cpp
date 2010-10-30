@@ -8,18 +8,17 @@ using namespace boost;
 using namespace pion;
 using namespace pion::net;
 
-namespace pion {        // begin namespace pion
-namespace plugins {     // begin namespace plugins
+namespace lite_comet {
 
 // CometReadService member functions
 
-void CometReadService::notifyAll(const std::string data) {
-    WriterList::iterator i = m_writers.begin();
-    for(; i != m_writers.end(); ++i) {
-        (*i)->write(data);
-        (*i)->send(bind(&TCPConnection::finish, (*i)->getTCPConnection()));
-    }
-    m_writers.clear();
+void CometReadService::notifyChannel(
+    HTTPResponseWriterPtr writer, 
+    ChannelPtr channel
+) {
+    PION_LOG_DEBUG(m_logger, "Notify channel test");
+    writer->write(channel->getData(0));
+    writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
 }
 
 /// handles requests for EchoService
@@ -41,11 +40,12 @@ void CometReadService::operator()(
     writer->getResponse().setDoNotSendContentLength();
     // Send the header
     writer->send();
-    
-    m_writers.insert(writer);
+
+    PION_LOG_DEBUG(m_logger, "New request is waitting for channel test");
+    ChannelPtr channel = m_channel_manager.getChannel("test");
+    channel->addListener(bind(&CometReadService::notifyChannel, this, writer, channel));
 }
 
 
-}   // end namespace plugins
-}   // end namespace pion
+}   // end namespace lite_comet
 

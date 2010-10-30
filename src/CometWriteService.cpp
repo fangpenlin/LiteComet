@@ -9,8 +9,7 @@ using namespace boost;
 using namespace pion;
 using namespace pion::net;
 
-namespace pion {        // begin namespace pion
-namespace plugins {     // begin namespace plugins
+namespace lite_comet {
 
 // CometWriteService member functions
 
@@ -30,13 +29,17 @@ void CometWriteService::operator()(
     );
     if(request->getContent()) {
         const std::string data = request->getContent();
-        m_readService.notifyAll(data);
+        PION_LOG_DEBUG(m_logger, "Add data to channel test");
+        ChannelPtr channel = m_channel_manager.getChannel("test");
+        channel->addData(data);
     } else {
         // TODO: write bad request error herex
         writer->write("Bad request");
         writer->send();
     }
     
+    // Close the connection once the request is done
+    tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);
     // Set the content type as text
     writer->getResponse().setContentType(HTTPTypes::CONTENT_TYPE_TEXT);
     // Send the response
@@ -45,6 +48,5 @@ void CometWriteService::operator()(
 }
 
 
-}   // end namespace plugins
-}   // end namespace pion
+}
 

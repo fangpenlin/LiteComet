@@ -107,6 +107,7 @@ void Channel::addListener(Listener func) {
 
 void Channel::notify() {
     m_data_added();
+    m_data_added.disconnect_all_slots();
 }
 
 }   // end namespace lite_comet 

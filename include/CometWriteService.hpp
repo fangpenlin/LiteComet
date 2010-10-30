@@ -3,13 +3,13 @@
 
 #include <set>
 
+#include <pion/PionLogger.hpp>
 #include <pion/net/WebService.hpp>
 #include <pion/net/HTTPResponseWriter.hpp>
 
-#include "CometReadService.hpp"
+#include "ChannelManager.hpp"
 
-namespace pion {        // begin namespace pion
-namespace plugins {     // begin namespace plugins
+namespace lite_comet {
 
 /**
     HTTP service for providing web server to push data to waiting users
@@ -18,18 +18,21 @@ class CometWriteService :
     public pion::net::WebService
 {
 private:
-    CometReadService &m_readService;
+    /// Channel manager
+    ChannelManager& m_channel_manager;
+    /// Logger
+    pion::PionLogger m_logger;
 public:
-    CometWriteService(CometReadService& readService) 
-        :   m_readService(readService)
+    CometWriteService(ChannelManager& channel_manager) 
+        : m_channel_manager(channel_manager),
+          m_logger(PION_GET_LOGGER("lite_comet.CometWriteService"))
     {}
     virtual ~CometWriteService() {}
     virtual void operator()(pion::net::HTTPRequestPtr& request,
                             pion::net::TCPConnectionPtr& tcp_conn);
 };
 
-}   // end namespace plugins
-}   // end namespace pion
+}
 
 #endif
 

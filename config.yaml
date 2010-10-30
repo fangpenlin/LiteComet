@@ -1,4 +1,7 @@
 ---
+# Turn the logging level to debug
+debug: true
+
 # Server relative configuration
 server:
     # port for running the server

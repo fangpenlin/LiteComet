@@ -17,6 +17,7 @@ using namespace boost::asio;
 using namespace pion;
 using namespace pion::net;
 using namespace YAML;
+using namespace lite_comet;
 
 /**
     @brief Print usage of this program
@@ -35,7 +36,7 @@ int main(int argc, const char **argv)
     size_t numThreads = 1;
 
     // Initialize log system (use simple configuration)
-    PionLogger main_log(PION_GET_LOGGER("PionHelloServer"));
+    PionLogger main_log(PION_GET_LOGGER("lite_comet"));
     PionLogger pion_log(PION_GET_LOGGER("pion"));
     PION_LOG_SETLEVEL_INFO(main_log);
     PION_LOG_SETLEVEL_INFO(pion_log);
@@ -43,40 +44,52 @@ int main(int argc, const char **argv)
 
     PION_LOG_INFO(main_log, "Initialize Lite Comet server");
 
-    string configFileName = "config.yaml";
+    string config_file_name = "config.yaml";
     // Get the configuration file name from args
     if(argc == 2) {
-        configFileName = argv[1];
+        config_file_name = argv[1];
     } else if(argc > 2) {
         printUsage();
         return 0;
     }
 
     stringstream msg;
-    msg << "Loading configuration from " << configFileName;
+    msg << "Loading configuration from " << config_file_name;
     PION_LOG_INFO(main_log, msg.str());
 
-    ifstream yamlFile(configFileName.c_str());
-    Parser parser(yamlFile);
+    ifstream yaml_file(config_file_name.c_str());
+    Parser parser(yaml_file);
 
     // Read the configuration yaml doc
     Node doc;
     parser.GetNextDocument(doc);
 
+    // Debug logger level
+    if(const Node *debug_node= doc.FindValue("debug")) {
+        bool debug;
+        *debug_node >> debug;
+        if(debug) {
+            PION_LOG_SETLEVEL_DEBUG(main_log);
+            PION_LOG_SETLEVEL_DEBUG(pion_log);
+        }
+    }
+
     // Configuration for server
-    if(const Node *pServerNode = doc.FindValue("server")) {
+    if(const Node *server_node = doc.FindValue("server")) {
         PION_LOG_INFO(main_log, "Loading server config");
         // Read port number
-        if(const Node *pPortNode = pServerNode->FindValue("port")) {
-            *pPortNode >> port;
+        if(const Node *port_node = server_node->FindValue("port")) {
+            *port_node >> port;
         }
         // Read interface
-        if(const Node *pInterfaceNode = pServerNode->FindValue("interface")) {
-            *pInterfaceNode >> interface;
+        if(const Node *interface_node = server_node->FindValue("interface")) {
+            *interface_node >> interface;
         }
         // Read number of threads 
-        if(const Node *pNumThreads = pServerNode->FindValue("numThreads")) {
-            *pNumThreads >> numThreads;
+        if(const Node *num_threads_node = \
+            server_node->FindValue("numThreads")
+        ) {
+            *num_threads_node >> numThreads;
         }
     } else {
         PION_LOG_WARN(main_log, 
@@ -97,15 +110,17 @@ int main(int argc, const char **argv)
         msg << "Number of threads: " << numThreads;
         PION_LOG_INFO(main_log, msg.str());
 
-        plugins::CometReadService readService;
-        plugins::CometWriteService writeService(readService);
+        ChannelManager channel_manager;
 
-        WebServer webServer(scheduler, endpoint);
-        webServer.addService("/read", 
-            dynamic_cast<WebService *>(&readService));
-        webServer.addService("/write", 
-            dynamic_cast<WebService *>(&writeService));
-        webServer.start();
+        CometReadService read_service(channel_manager);
+        CometWriteService write_service(channel_manager);
+
+        WebServer web_server(scheduler, endpoint);
+        web_server.addService("/read", 
+            dynamic_cast<WebService *>(&read_service));
+        web_server.addService("/write", 
+            dynamic_cast<WebService *>(&write_service));
+        web_server.start();
         main_shutdown_manager.wait();
     } catch (std::exception& e) {
         PION_LOG_FATAL(main_log, e.what());
