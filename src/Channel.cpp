@@ -76,8 +76,7 @@ const std::string Channel::getData(long offset) {
         new_offset = msg.getOffset();
         if(include_preceding) {
             data << msg.getData();
-            MessageList::const_iterator j = ++i;
-            if(j != m_messages.end()) {
+            if(boost::next(i) != m_messages.end()) {
                 data << ",";
             }
         }

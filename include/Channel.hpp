@@ -3,6 +3,8 @@
 
 #include <list>
 
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/utility.hpp>
 #include <boost/signals2.hpp>
 #include <boost/function.hpp>
 
@@ -60,7 +62,8 @@ public:
     Channel for registering event data
 **/
 class Channel:
-    public boost::noncopyable
+    public boost::noncopyable,
+    public boost::enable_shared_from_this<Channel>
 {
 public:
     ///
@@ -81,8 +84,14 @@ private:
     MessageList m_messages;
     /// Event for data added
     Signal m_data_added;
-public:
+protected:
+    // stop client from create Channel directly, use create() instead
     Channel() {}
+public:
+    static inline boost::shared_ptr<Channel> create() {
+        return boost::shared_ptr<Channel>(new Channel());
+    } 
+
     ~Channel() {}
 
     /**
@@ -125,6 +134,9 @@ private:
     void notify() ;
 
 };
+
+/// Shared pointer of channel
+typedef boost::shared_ptr<Channel> ChannelPtr;
 
 }   // end namespace lite_comet
 
