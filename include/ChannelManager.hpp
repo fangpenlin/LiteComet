@@ -32,6 +32,12 @@ public:
         @return channel
     **/
     ChannelPtr& getChannel(const std::string&) ;
+
+    /**
+        @brief Get map to all channels
+        @return channel map
+    **/
+    ChannelMap& getChannelMap() ;
     
     /**
         @brief Reset channel by name

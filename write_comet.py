@@ -8,7 +8,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
 
 content = 'Hello baby!'
-s.send('GET /write HTTP/1.1\r\nContent-Length: %d\r\n\r\n%s' % (
+s.send('GET /write?channel_name=test_channel&data=hahaha HTTP/1.1\r\nContent-Length: %d\r\n\r\n%s' % (
     len(content), content
 ))
 

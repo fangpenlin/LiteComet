@@ -14,6 +14,10 @@ ChannelPtr& ChannelManager::getChannel(const string& name) {
     return i->second;
 }
 
+ChannelManager::ChannelMap& ChannelManager::getChannelMap() {
+    return m_channels;
+}
+
 void ChannelManager::reset(const string& name) {
     m_channels.erase(name);
 }
