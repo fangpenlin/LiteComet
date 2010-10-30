@@ -137,3 +137,10 @@ if (WIN32)
 endif ()
 
 add_subdirectory (loggingserver)
+
+# install
+INSTALL(FILES ${log4cplus_headers} DESTINATION /include)
+INSTALL(TARGETS log4cplus
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib/static)
