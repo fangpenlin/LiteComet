@@ -13,15 +13,13 @@ namespace lite_comet {
 // CometReadService member functions
 
 void CometReadService::notifyChannel(
-    HTTPResponseWriterWeakPtr weak_writer, 
+    HTTPResponseWriterPtr weak_writer, 
     ChannelPtr channel
 ) {
     PION_LOG_DEBUG(m_logger, "Notify channel test");
     HTTPResponseWriterPtr writer(weak_writer);
     writer->write(channel->getData(0));
     writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
-
-    m_writers.erase(writer);
 }
 
 /// handles requests for EchoService
@@ -44,14 +42,12 @@ void CometReadService::operator()(
     // Send the header
     writer->send();
 
-    // Keep the reference
-    m_writers.insert(writer);
-
     PION_LOG_DEBUG(m_logger, "New request is waitting for channel test");
     ChannelPtr channel = m_channel_manager.getChannel("test");
     channel->addListener(
         bind(&CometReadService::notifyChannel, this, 
-             HTTPResponseWriterWeakPtr(writer), channel));
+             writer, channel
+    ));
 }
 
 

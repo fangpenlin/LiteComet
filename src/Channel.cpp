@@ -108,6 +108,19 @@ void Channel::addListener(Listener func) {
 void Channel::notify() {
     m_data_added();
     m_data_added.disconnect_all_slots();
+    /**
+    Note:
+        Signal2 of boost won't really delete the connections if we only 
+        disconnect them, reference to
+
+        http://stackoverflow.com/questions/2049291/ 
+            force-deletion-of-slot-in-boostsignals2/3074098#3074098
+        
+        For solving this problem, we need to call signal again to make it 
+        delete those connections. Otherwise, the connection will keep-alive
+        untail next call
+    **/
+    m_data_added();
 }
 
 }   // end namespace lite_comet 
