@@ -7,6 +7,7 @@
 #include <pion/net/WebServer.hpp>
 #include <yaml.h>
 
+#include "Config.hpp"
 #include "ShutdownManager.hpp"
 #include "Channel.hpp"
 #include "CometReadService.hpp"
@@ -72,22 +73,49 @@ int main(int argc, const char **argv)
         }
     }
 
+    // Configuration for lite comet 
+    if(const Node *lite_comet_node = doc.FindValue("lite_comet")) {
+        PION_LOG_INFO(main_log, "Loading Lite Comet config");
+        const Node *node = NULL;
+        if((node = lite_comet_node->FindValue("NO_OFFSET"))) {
+            *node >> Config::instance().NO_OFFSET;
+        }
+        if((node = lite_comet_node->FindValue("WAITING_DATA"))) {
+            *node >> Config::instance().WAITING_DATA;
+        }
+        if((node = lite_comet_node->FindValue("NEEDS_RESYNC"))) {
+            *node >> Config::instance().NEEDS_RESYNC;
+        }
+        if((node = lite_comet_node->FindValue("CHANNEL_TIMEOUT"))) {
+            *node >> Config::instance().CHANNEL_TIMEOUT;
+        }
+        if((node = lite_comet_node->FindValue("CHANNEL_MAX_MSG"))) {
+            *node >> Config::instance().CHANNEL_MAX_MSG;
+        }
+        if((node = lite_comet_node->FindValue("CLEANUP_CYCLE"))) {
+            *node >> Config::instance().CLEANUP_CYCLE;
+        }
+    } else {
+        PION_LOG_WARN(main_log, 
+            "Can't find lite_comet setting in configuration file.");
+    }
+
+
     // Configuration for server
     if(const Node *server_node = doc.FindValue("server")) {
         PION_LOG_INFO(main_log, "Loading server config");
         // Read port number
-        if(const Node *port_node = server_node->FindValue("port")) {
-            *port_node >> port;
+        const Node *node = NULL;
+        if((node = server_node->FindValue("port"))) {
+            *node >> port;
         }
         // Read interface
-        if(const Node *interface_node = server_node->FindValue("interface")) {
-            *interface_node >> interface;
+        if((node = server_node->FindValue("interface"))) {
+            *node >> interface;
         }
         // Read number of threads 
-        if(const Node *num_threads_node = \
-            server_node->FindValue("numThreads")
-        ) {
-            *num_threads_node >> numThreads;
+        if((node = server_node->FindValue("numThreads"))) {
+            *node >> numThreads;
         }
     } else {
         PION_LOG_WARN(main_log, 

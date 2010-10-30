@@ -12,4 +12,15 @@ server:
 
     # how many threads to run io_service
     numThreads: 1
+
+# Lite comet relative configuration
+lite_comet:
+    NO_OFFSET: 0
+    WAITING_DATA: -1
+    NEEDS_RESYNC: -3
+
+    CHANNEL_TIMEOUT: 10000
+    CHANNEL_MAX_MSG: 20
+
+    CLEANUP_CYCLE: 5000
 ...
