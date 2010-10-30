@@ -7,6 +7,7 @@
 
 #include "Config.hpp"
 #include "CometReadService.hpp"
+#include "Response.hpp"
 
 using namespace std;
 using namespace boost;
@@ -38,7 +39,7 @@ const string messagesToString(
 }
 
 const string channelDataToString(
-    Channel::ChannelData data
+    const Channel::ChannelData& data
 ) {
     stringstream result;
     result << "{"
@@ -50,6 +51,7 @@ const string channelDataToString(
 
 void CometReadService::notifyChannel(
     const string& channel_name,
+    const string& js_callback,
     long offset,
     long timeout,
     HTTPRequestPtr request,
@@ -57,7 +59,14 @@ void CometReadService::notifyChannel(
     ChannelPtr channel
 ) {
     PION_LOG_DEBUG(m_logger, "Notify channel \"" << channel_name << "\"");
-    writer->write(channelDataToString(channel->getData(offset)));
+    const Channel::ChannelData new_data = channel->getData(offset);
+    // write empty back
+    if(new_data.get<1>() == new_data.get<2>()) {
+        Response::empty(writer, offset, js_callback);
+    // write data back
+    } else {
+        Response::data(writer, channelDataToString(new_data), js_callback);
+    }
     writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
 }
 
@@ -74,6 +83,8 @@ void CometReadService::operator()(
     );
     // Comet channel name
     const string channel_name(request->getQuery("channel_name"));
+    // Java script callback
+    const string js_callback(request->getQuery("js_callback"));
     // Offset of data
     long offset = Config::instance().NO_OFFSET;
     if(request->hasQuery("offset")) {
@@ -107,16 +118,28 @@ void CometReadService::operator()(
     
     const Channel::ChannelData new_data = channel->getData(offset);
     if(new_data.get<0>() == Config::instance().NEEDS_RESYNC) {
-        // TODO return resync here
         PION_LOG_DEBUG(m_logger, "Resync channel \"" << 
             channel_name << "\"");
+        Response::data(writer, channelDataToString(new_data), js_callback);
+        writer->send(bind(&TCPConnection::finish, tcp_conn));
     // There is data to return immedinately
     } else if(new_data.get<1>() != new_data.get<2>()) {
-        // TODO
         PION_LOG_DEBUG(m_logger, "Return instant data from channel \"" << 
             channel_name << "\"");
+        Response::data(writer, channelDataToString(new_data), js_callback);
+        writer->send(bind(&TCPConnection::finish, tcp_conn));
     // We need to wait for more data here
     } else { 
+        PION_LOG_DEBUG(m_logger, "A request is waitting for channel \"" << 
+            channel_name << "\"");
+        channel->addListener(
+            bind(&CometReadService::notifyChannel, this, 
+                channel_name, js_callback, offset, timeout, request, writer, 
+                channel
+        ));
+
+        // TODO set timer and timeout function
+
         // We don't want Keep-Alive here
         tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);
         // Set the content type as text
@@ -125,14 +148,6 @@ void CometReadService::operator()(
         writer->getResponse().setDoNotSendContentLength();
         // Send the header
         writer->send();
-
-        PION_LOG_DEBUG(m_logger, "A request is waitting for channel \"" << 
-            channel_name << "\"");
-        channel->addListener(
-            bind(&CometReadService::notifyChannel, this, 
-                 channel_name, offset, timeout, request, writer, channel
-        ));
-
     }
 
 }
