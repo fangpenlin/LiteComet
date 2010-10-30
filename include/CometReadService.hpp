@@ -32,7 +32,10 @@ private:
     /**
         @brief Notify all waiting connections
     **/
-    virtual void notifyChannel(pion::net::HTTPResponseWriterPtr, ChannelPtr) ;
+    virtual void notifyChannel(const std::string&, long, long, 
+        pion::net::HTTPRequestPtr, pion::net::HTTPResponseWriterPtr, 
+        ChannelPtr) ;
+
 };
 
 }

@@ -7,6 +7,7 @@
 #include <boost/utility.hpp>
 #include <boost/signals2.hpp>
 #include <boost/function.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #include "Message.hpp"
 
@@ -20,19 +21,17 @@ class Channel:
     public boost::enable_shared_from_this<Channel>
 {
 public:
-    ///
-    static const long NO_OFFSET = 0;
-    ///
-    static const long WAITING_DATA = -1;
-    ///
-    static const long NEEDS_RESYNC = -3;
-
     /// Container of messages
     typedef std::list<Message> MessageList;
     /// Signal for notifying listeners
     typedef boost::signals2::signal<void ()> Signal;
     /// Listener function type
     typedef boost::function<void ()> Listener;
+    /// Type for returning from getData
+    typedef boost::tuple<long, 
+        MessageList::const_iterator, 
+        MessageList::const_iterator
+    > ChannelData;
 private:
     /// Messages of this channel
     MessageList m_messages;
@@ -58,7 +57,7 @@ public:
         @brief Add data to channel
         @param data to add
     **/
-    const std::string getData(long offset) ;
+    const ChannelData getData(long offset) ;
 
     /**
         @brief Add data to channel

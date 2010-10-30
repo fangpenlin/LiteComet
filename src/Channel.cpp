@@ -4,20 +4,13 @@
 #include <pion/net/HTTPResponseWriter.hpp>
 #include <pion/net/PionUser.hpp>
 
+#include "Config.hpp"
 #include "Channel.hpp"
 
 using namespace std;
+using namespace boost;
 
 namespace lite_comet {
-
-static string getResponse(long new_offset, const string& data = string("[]")) {
-    stringstream result;
-    result << "{" 
-        << "new_offset:" << new_offset<< ","
-        << "data:" << data
-    << "}";
-    return result.str();
-}
 
 void Channel::addData(const std::string& data) {
     long current_offset = getCurrentOffset();
@@ -25,7 +18,7 @@ void Channel::addData(const std::string& data) {
     if(current_offset > 65536) {
         current_offset = 0;
         m_messages.clear();
-    } else if (current_offset == WAITING_DATA) {
+    } else if (current_offset == Config::instance().WAITING_DATA) {
         current_offset = 0;
     }
     ++current_offset;
@@ -37,21 +30,23 @@ void Channel::addData(const std::string& data) {
     markActive();
 }
 
-const std::string Channel::getData(long offset) {
+const Channel::ChannelData Channel::getData(long offset) {
     markActive();
 
     // We don't have data
     if(m_messages.empty()) {
-        return getResponse(WAITING_DATA);
+        return make_tuple(Config::instance().WAITING_DATA, 
+            m_messages.end(), m_messages.end());
     }
 
     bool include_preceding = false;
-    // If we are waiting for data we return all data
-    if(offset == WAITING_DATA) {
+    // If client is waiting for data then we need to return all data
+    if(offset == Config::instance().WAITING_DATA) {
         include_preceding = true;
     }
     // Try to find the current offset
     // if it's not found the data needs to be resynced
+    MessageList::const_iterator begin_iter = m_messages.end();
     if(offset > 0) {
         bool current_offset_found = false;
         MessageList::const_iterator i = m_messages.begin();
@@ -59,35 +54,27 @@ const std::string Channel::getData(long offset) {
             const Message& msg = *i;
             if(msg.getOffset() == offset) {
                 current_offset_found = true;
+                begin_iter = i;
+                break;
             }
         }
 
         if(!current_offset_found) {
-            return getResponse(NEEDS_RESYNC);
+            return make_tuple(Config::instance().NEEDS_RESYNC, 
+                m_messages.end(), m_messages.end());
         }
     }
-
-    long new_offset = WAITING_DATA;
-    stringstream data;
-    data << "[";
-    MessageList::const_iterator i = m_messages.begin();
-    for(; i != m_messages.end(); ++i) {
-        const Message& msg = *i;
-        new_offset = msg.getOffset();
-        if(include_preceding) {
-            data << msg.getData();
-            if(boost::next(i) != m_messages.end()) {
-                data << ",";
-            }
-        }
+    // Include preceding messages
+    if(include_preceding) {
+        begin_iter = m_messages.begin();
     }
-    data << "]";
-    return getResponse(new_offset, data.str());
+    MessageList::const_iterator end_iter = m_messages.end();
+    return make_tuple(getCurrentOffset(), begin_iter, end_iter);
 }
 
 long Channel::getCurrentOffset() const {
     if(m_messages.empty()) {
-        return WAITING_DATA;
+        return Config::instance().WAITING_DATA;
     }
     return m_messages.back().getOffset();
 }
