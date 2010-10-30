@@ -13,15 +13,15 @@ namespace lite_comet {
 // CometReadService member functions
 
 void CometReadService::notifyChannel(
-    HTTPResponseWriterPtr writer, 
+    HTTPResponseWriterWeakPtr weak_writer, 
     ChannelPtr channel
 ) {
     PION_LOG_DEBUG(m_logger, "Notify channel test");
+    HTTPResponseWriterPtr writer(weak_writer);
     writer->write(channel->getData(0));
-    // TODO there must be some body still keep the reference to 
-    // writer or tcp connection, we must find them therefore we can
-    // relase the tcp connection
     writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
+
+    m_writers.erase(writer);
 }
 
 /// handles requests for EchoService
@@ -44,10 +44,14 @@ void CometReadService::operator()(
     // Send the header
     writer->send();
 
+    // Keep the reference
+    m_writers.insert(writer);
+
     PION_LOG_DEBUG(m_logger, "New request is waitting for channel test");
     ChannelPtr channel = m_channel_manager.getChannel("test");
     channel->addListener(
-        bind(&CometReadService::notifyChannel, this, writer, channel));
+        bind(&CometReadService::notifyChannel, this, 
+             HTTPResponseWriterWeakPtr(writer), channel));
 }
 
 
