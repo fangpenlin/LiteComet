@@ -22,15 +22,19 @@ namespace lite_comet {
 
 // CometReadService member functions
 
-Json::Value& operator << (Json::Value& value, const Channel::ChannelData& channel_data) {
-    value["new_offset"] = static_cast<Json::Int>(channel_data.get<0>());
-    Json::Value data;
+ostream& operator << (ostream& out, const Channel::ChannelData& channel_data) {
+    out << "{";
+    out << "\"new_offset\":" << channel_data.get<0>() << ",";
+    out << "\"data\":["; 
     Channel::MessageList::const_iterator i = channel_data.get<1>();
     for(; i != channel_data.get<2>(); ++i) {
-        data.append((*i).getData());
+        out << (*i).getData();
+        if(next(i) != channel_data.get<2>()) {
+            out << ",";
+        }
     }
-    value["data"] = data;
-    return value;
+    out << "]}";
+    return out;
 }
 
 void CometReadService::notifyChannel(
@@ -52,10 +56,9 @@ void CometReadService::notifyChannel(
         Response::empty(writer, offset, js_callback);
     // write data back
     } else {
-        Json::Value root;
-        root << new_data;
-        Json::FastWriter json_writer;
-        Response::data(writer, json_writer.write(root), js_callback);
+        stringstream stream;
+        stream << new_data;
+        Response::data(writer, stream.str(), js_callback);
     }
     writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
 }
@@ -138,20 +141,18 @@ void CometReadService::operator()(
         PION_LOG_DEBUG(m_logger, "Resync channel \"" << 
             channel_name << "\"");
 
-        Json::Value root;
-        root << new_data;
-        Json::FastWriter json_writer;
-        Response::data(writer, json_writer.write(root), js_callback);
+        stringstream stream;
+        stream << new_data;
+        Response::data(writer, stream.str(), js_callback);
         writer->send(bind(&TCPConnection::finish, tcp_conn));
     // There is data to return immedinately
     } else if(new_data.get<1>() != new_data.get<2>()) {
         PION_LOG_DEBUG(m_logger, "Return instant data from channel \"" << 
             channel_name << "\"");
 
-        Json::Value root;
-        root << new_data;
-        Json::FastWriter json_writer;
-        Response::data(writer, json_writer.write(root), js_callback);
+        stringstream stream;
+        stream << new_data;
+        Response::data(writer, stream.str(), js_callback);
         writer->send(bind(&TCPConnection::finish, tcp_conn));
     // We need to wait for more data here
     } else { 

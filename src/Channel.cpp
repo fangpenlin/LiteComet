@@ -23,7 +23,7 @@ void Channel::addData(const std::string& data) {
     }
     ++current_offset;
     m_messages.push_back(Message(current_offset, data));
-    if(m_messages.size() > 100) {
+    if(m_messages.size() > Config::instance().CHANNEL_MAX_MSG) {
         m_messages.pop_front();
     }
     notify();
@@ -55,6 +55,7 @@ const Channel::ChannelData Channel::getData(long offset) {
             if(msg.getOffset() == offset) {
                 current_offset_found = true;
                 begin_iter = i;
+                ++begin_iter;
                 break;
             }
         }
