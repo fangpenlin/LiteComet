@@ -3,12 +3,12 @@ import sys
 import socket
 
 HOST = '127.0.0.1'
-PORT = 8080
+PORT = 9080
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
 
 content = 'Hello baby!'
-s.send('GET /write?channel_name=test_channel&data=hahaha HTTP/1.1\r\nContent-Length: %d\r\n\r\n%s' % (
+s.send('GET /comet?channel_name=test_channel&data=hahaha HTTP/1.1\r\nContent-Length: %d\r\n\r\n%s' % (
     len(content), content
 ))
 

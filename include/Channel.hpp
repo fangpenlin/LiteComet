@@ -5,7 +5,6 @@
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/utility.hpp>
-#include <boost/signals2.hpp>
 #include <boost/function.hpp>
 #include <boost/tuple/tuple.hpp>
 
@@ -23,20 +22,23 @@ class Channel:
 public:
     /// Container of messages
     typedef std::list<Message> MessageList;
-    /// Signal for notifying listeners
-    typedef boost::signals2::signal<void ()> Signal;
     /// Listener function type
     typedef boost::function<void ()> Listener;
+    /// Container for listener
+    typedef std::list<Listener> ListenerList;
+    /// Listener ID
+    typedef ListenerList::iterator ListenerID;
     /// Type for returning from getData
     typedef boost::tuple<long, 
         MessageList::const_iterator, 
         MessageList::const_iterator
     > ChannelData;
+
 private:
     /// Messages of this channel
     MessageList m_messages;
-    /// Event for data added
-    Signal m_data_added;
+    /// List of listener to notify
+    ListenerList m_listeners;
 protected:
     // stop client from create Channel directly, use create() instead
     Channel() {}
@@ -77,8 +79,15 @@ public:
 
     /**
         @brief Add listener to data added event
+        @return ID to the listener
     **/
-    void addListener(Listener) ;
+    ListenerID addListener(Listener) ;
+
+    /**
+        @brief Remove a listener
+        @param ID of listener to remove
+    **/
+    void removeListener(ListenerID) ;
 
 private:
     /**

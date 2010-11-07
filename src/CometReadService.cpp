@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace boost::asio;
 using namespace pion;
 using namespace pion::net;
 
@@ -50,15 +51,18 @@ const string channelDataToString(
 }
 
 void CometReadService::notifyChannel(
+    HTTPResponseWriterPtr writer, 
+    ChannelPtr channel,
+    CometReadService::TimerPtr timer,
     const string& channel_name,
     const string& js_callback,
-    long offset,
-    long timeout,
-    HTTPRequestPtr request,
-    HTTPResponseWriterPtr writer, 
-    ChannelPtr channel
+    long offset
 ) {
     PION_LOG_DEBUG(m_logger, "Notify channel \"" << channel_name << "\"");
+    // Cahcnel timeout
+    m_timers.erase(timer);
+    timer->cancel();
+    // Get data
     const Channel::ChannelData new_data = channel->getData(offset);
     // write empty back
     if(new_data.get<1>() == new_data.get<2>()) {
@@ -70,11 +74,34 @@ void CometReadService::notifyChannel(
     writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
 }
 
+void CometReadService::notifyTimeout(
+    HTTPResponseWriterPtr writer, 
+    ChannelPtr channel,
+    CometReadService::TimerPtr timer,
+    Channel::ListenerID listener_id,
+    const boost::system::error_code& error,
+    const string& channel_name,
+    const string& js_callback,
+    long offset
+) {
+    if(!error) {
+        PION_LOG_DEBUG(m_logger, "Notify timeout \"" << channel_name << "\"");
+        channel->removeListener(listener_id);
+        m_timers.erase(timer);
+        Response::empty(writer, offset, js_callback);
+        writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
+    } else {
+        PION_LOG_ERROR(m_logger, "Timer error: " << error);
+    }
+}
+
 /// handles requests for EchoService
 void CometReadService::operator()(
     HTTPRequestPtr& request, 
     TCPConnectionPtr& tcp_conn
 ) {
+    PION_LOG_DEBUG(m_logger, "Read with query: " << request->getQueryString());
+
     HTTPResponseWriterPtr writer(
         HTTPResponseWriter::create(
             tcp_conn, 
@@ -82,7 +109,7 @@ void CometReadService::operator()(
         )
     );
     // Comet channel name
-    const string channel_name(request->getQuery("channel_name"));
+    const string channel_name(request->getQuery("channel"));
     // Java script callback
     const string js_callback(request->getQuery("js_callback"));
     // Offset of data
@@ -93,7 +120,7 @@ void CometReadService::operator()(
     // Timeout of waiting time
     long timeout = Config::instance().CHANNEL_TIMEOUT;
     if(request->hasQuery("timeout")) {
-        timeout = lexical_cast<long>(request->getQuery("offset"));
+        timeout = lexical_cast<long>(request->getQuery("timeout"));
     }
     // set timeout if it is zero
     if(!timeout) {
@@ -132,13 +159,24 @@ void CometReadService::operator()(
     } else { 
         PION_LOG_DEBUG(m_logger, "A request is waitting for channel \"" << 
             channel_name << "\"");
-        channel->addListener(
+
+        // set up timeout timer
+        shared_ptr<deadline_timer> timer(
+            new deadline_timer(tcp_conn->getIOService()));
+        timer->expires_from_now(posix_time::milliseconds(timeout));
+        m_timers.insert(timer);
+       
+        // wait for data
+        Channel::ListenerID listener_id = channel->addListener(
             bind(&CometReadService::notifyChannel, this, 
-                channel_name, js_callback, offset, timeout, request, writer, 
-                channel
+                writer, channel, timer, channel_name, js_callback, offset
         ));
 
-        // TODO set timer and timeout function
+        timer->async_wait(
+            bind(&CometReadService::notifyTimeout, this, 
+                writer, channel, timer, listener_id, placeholders::error,
+                channel_name, js_callback, offset
+        ));
 
         // We don't want Keep-Alive here
         tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);

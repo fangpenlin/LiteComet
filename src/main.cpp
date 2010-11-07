@@ -29,10 +29,14 @@ void printUsage() {
 
 int main(int argc, const char **argv)
 {
-    // Port number to run server
-    unsigned int port = 8080;
-    // Network interface to run server
-    string interface = "0.0.0.0";
+    // Port number to run read server
+    unsigned int read_port = 8080;
+    // Network interface to run read server
+    string read_interface = "0.0.0.0";
+    // Port number to run write server
+    unsigned int write_port = 9080;
+    // Network interface to run write server
+    string write_interface = "0.0.0.0";
     // Number of threads to run
     size_t numThreads = 1;
 
@@ -106,12 +110,19 @@ int main(int argc, const char **argv)
         PION_LOG_INFO(main_log, "Loading server config");
         // Read port number
         const Node *node = NULL;
-        if((node = server_node->FindValue("port"))) {
-            *node >> port;
+        if((node = server_node->FindValue("read_port"))) {
+            *node >> read_port;
         }
         // Read interface
-        if((node = server_node->FindValue("interface"))) {
-            *node >> interface;
+        if((node = server_node->FindValue("read_interface"))) {
+            *node >> read_interface;
+        }
+        if((node = server_node->FindValue("write_port"))) {
+            *node >> write_port;
+        }
+        // Read interface
+        if((node = server_node->FindValue("write_interface"))) {
+            *node >> write_interface;
         }
         // Read number of threads 
         if((node = server_node->FindValue("numThreads"))) {
@@ -124,9 +135,16 @@ int main(int argc, const char **argv)
 
     try {
         // Address of interface
-        const ip::address address(ip::address::from_string(interface));
-        // Endpoint to listen
-        const ip::tcp::endpoint endpoint(address, port);
+        const ip::address read_address(
+            ip::address::from_string(read_interface));
+        // Endpoint to listen reading server
+        const ip::tcp::endpoint read_endpoint(read_address, read_port);
+
+        // Address of interface
+        const ip::address write_address(
+            ip::address::from_string(write_interface));
+        // Endpoint to listen writing server
+        const ip::tcp::endpoint write_endpoint(write_address, write_port);
 
         // Cocurrency model
         PionOneToOneScheduler scheduler;
@@ -139,12 +157,16 @@ int main(int argc, const char **argv)
         CometReadService read_service(channel_manager);
         CometWriteService write_service(channel_manager);
 
-        WebServer web_server(scheduler, endpoint);
-        web_server.addService("/read", 
+        WebServer read_server(scheduler, read_endpoint);
+        read_server.addService("/comet", 
             dynamic_cast<WebService *>(&read_service));
-        web_server.addService("/write", 
+
+        WebServer write_server(scheduler, write_endpoint);
+        write_server.addService("/comet", 
             dynamic_cast<WebService *>(&write_service));
-        web_server.start();
+
+        read_server.start();
+        write_server.start();
         main_shutdown_manager.wait();
     } catch (std::exception& e) {
         PION_LOG_FATAL(main_log, e.what());

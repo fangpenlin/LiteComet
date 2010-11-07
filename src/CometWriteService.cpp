@@ -4,6 +4,7 @@
 #include <pion/net/PionUser.hpp>
 
 #include "CometWriteService.hpp"
+#include "Response.hpp"
 
 using namespace std;
 using namespace boost;
@@ -19,7 +20,7 @@ void CometWriteService::operator()(
     HTTPRequestPtr& request, 
     TCPConnectionPtr& tcp_conn
 ) {
-    static const string OK_RESPONSE("OK");
+    PION_LOG_DEBUG(m_logger, "Write with query: " << request->getQueryString());
 
     HTTPResponseWriterPtr writer(
         HTTPResponseWriter::create(
@@ -38,10 +39,10 @@ void CometWriteService::operator()(
             m_channel_manager.reset(i->first);
             i->second->markActive();
         }
-    } else if (type == "echo") {
-        // TODO response OK with channels here
+        PION_LOG_DEBUG(m_logger, "Reset all channels");
     } else if (type == "close") {
-        // TODO
+        m_channel_manager.reset(channel_name);
+        PION_LOG_DEBUG(m_logger, "Close channel " << channel_name);
     } else if (type == "is_active") {
         // TODO test active and return here
     } else {
@@ -63,7 +64,7 @@ void CometWriteService::operator()(
     // Set the content type as text
     writer->getResponse().setContentType(HTTPTypes::CONTENT_TYPE_TEXT);
     // Send the response
-    writer->writeNoCopy(OK_RESPONSE);
+    writer->writeNoCopy(Response::OK);
     writer->send();
 }
 

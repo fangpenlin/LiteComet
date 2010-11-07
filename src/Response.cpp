@@ -11,7 +11,7 @@ namespace lite_comet {
 const string Response::INVALID_REQUEST("{'error': 'Invalid request'}");
 const string Response::NOT_ACTIVE_CHANNEL(
     "{'error': 'Not active channel (no listeners)'}");
-const string Response::OK("{'status': 'ok'}");
+const string Response::OK("{\"status\": \"ok\"}");
 
 void Response::ok(
     HTTPResponseWriterPtr writer, 
