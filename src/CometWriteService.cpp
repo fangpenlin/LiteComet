@@ -56,13 +56,20 @@ void CometWriteService::operator()(
     } else if (type == "is_active") {
         stringstream s;
         s << "{";
+        vector<string> result;
         ChannelList::const_iterator i = channels.begin();
         for(; i != channels.end(); ++i) {
             if(m_channel_manager.isActive(*i)) {
-                s << "\"" << *i << "\": 1";
+                result.push_back(*i);
             }
         }
-        // TODO handle comma here
+        vector<string>::const_iterator j = result.begin();
+        for(; j != result.end(); ++j) {
+            s << "\"" << *j << "\": 1";
+            if(next(j) != result.end()) {
+                s << ",";
+            }
+        }
         s << "}";
         Response::ok(writer, s.str());
         writer->send();

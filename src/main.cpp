@@ -73,7 +73,7 @@ int main(int argc, const char **argv)
         *debug_node >> debug;
         if(debug) {
             PION_LOG_SETLEVEL_DEBUG(main_log);
-            PION_LOG_SETLEVEL_DEBUG(pion_log);
+            //PION_LOG_SETLEVEL_DEBUG(pion_log);
         }
     }
 

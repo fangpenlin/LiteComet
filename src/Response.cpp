@@ -57,10 +57,9 @@ void Response::empty(
     const string& callback, 
     bool with_headers
 ) {
-    Json::Value root;
-    root["new_offset"] = static_cast<Json::Int>(new_offset);
-    Json::FastWriter json_writer;
-    Response::data(writer, json_writer.write(root), callback, with_headers);
+    stringstream stream;
+    stream << "{\"new_offset\":" << new_offset << "}";
+    Response::data(writer, stream.str(), callback, with_headers);
 }
 
 }   // end namespace lite_comet 
