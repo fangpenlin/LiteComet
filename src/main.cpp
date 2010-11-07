@@ -5,6 +5,9 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
 #include <pion/net/WebServer.hpp>
 #include <yaml.h>
 
@@ -23,14 +26,7 @@ using namespace pion::net;
 using namespace YAML;
 using namespace lite_comet;
 
-/**
-    @brief Print usage of this program
-**/
-void printUsage() {
-    cout << "Usage: lite_comet [config.yaml]" << endl;
-}
-
-int main(int argc, const char **argv)
+int main(int argc, char* argv[])
 {
     // Port number to run read server
     unsigned int read_port = 8080;
@@ -50,17 +46,42 @@ int main(int argc, const char **argv)
     PION_LOG_SETLEVEL_INFO(pion_log);
     PION_LOG_CONFIG_BASIC;
 
-    PION_LOG_INFO(main_log, "Initialize Lite Comet server");
-
     string config_file_name = "config.yaml";
-    // Get the configuration file name from args
-    if(argc == 2) {
-        config_file_name = argv[1];
-    } else if(argc > 2) {
-        printUsage();
-        return 0;
+
+    namespace po = boost::program_options;
+    po::options_description desc("Available options:");
+    desc.add_options()
+        ("help", "Print help message")
+        ("config,c", 
+            po::value<string>(&config_file_name)->default_value("config.yaml"), 
+            "File path to configuration")
+        ("debug", 
+            po::value<bool>(), 
+            "Whether to turn logger level to debug")
+        ("read_port", 
+            po::value<size_t>(), 
+            "Port of read comet server")
+        ("read_interface", 
+            po::value<string>(), 
+            "Interface of read comet server")
+        ("write_port", 
+            po::value<size_t>(), 
+            "Port of write comet server")
+        ("write_interface", 
+            po::value<string>(), 
+            "Interface of write comet server")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        cout << desc << endl;
+        return 1;
     }
 
+    PION_LOG_INFO(main_log, "Initialize Lite Comet server");
     PION_LOG_INFO(main_log, "Loading configuration from " << config_file_name);
 
     ifstream yaml_file(config_file_name.c_str());
@@ -71,13 +92,16 @@ int main(int argc, const char **argv)
     parser.GetNextDocument(doc);
 
     // Debug logger level
+    bool debug;
     if(const Node *debug_node= doc.FindValue("debug")) {
-        bool debug;
         *debug_node >> debug;
-        if(debug) {
-            PION_LOG_SETLEVEL_DEBUG(main_log);
-            //PION_LOG_SETLEVEL_DEBUG(pion_log);
-        }
+    }
+    if (vm.count("debug")) {
+        debug = vm["debug"].as<bool>();
+    }
+    if(debug) {
+        PION_LOG_SETLEVEL_DEBUG(main_log);
+        //PION_LOG_SETLEVEL_DEBUG(pion_log);
     }
 
     // Configuration for lite comet 
@@ -107,7 +131,6 @@ int main(int argc, const char **argv)
             "Can't find lite_comet setting in configuration file.");
     }
 
-
     // Configuration for server
     if(const Node *server_node = doc.FindValue("server")) {
         PION_LOG_INFO(main_log, "Loading server config");
@@ -136,6 +159,19 @@ int main(int argc, const char **argv)
             "Can't find server setting in configuration file.");
     }
 
+    if (vm.count("read_port")) {
+        read_port = vm["read_port"].as<size_t>();
+    }
+    if (vm.count("read_interface")) {
+        read_interface = vm["read_interface"].as<string>();
+    }
+    if (vm.count("write_port")) {
+        write_port = vm["write_port"].as<size_t>();
+    }
+    if (vm.count("write_interface")) {
+        write_interface = vm["write_interface"].as<string>();
+    }
+
     try {
         // Address of interface
         const ip::address read_address(
@@ -153,6 +189,15 @@ int main(int argc, const char **argv)
         PionOneToOneScheduler scheduler;
         scheduler.setNumThreads(numThreads);
         
+        PION_LOG_INFO(main_log, "Read port: " << read_port);
+        PION_LOG_INFO(main_log, "Read interface: " << read_interface);
+        PION_LOG_INFO(main_log, "Write port: " << write_port);
+        PION_LOG_INFO(main_log, "Write interface: " << write_interface);
+
+        if(numThreads != 1) {
+            PION_LOG_FATAL(main_log, "Only support 1 thread now");
+            return 1;
+        }
         PION_LOG_INFO(main_log, "Number of threads: " << numThreads);
 
         ChannelManager channel_manager(
