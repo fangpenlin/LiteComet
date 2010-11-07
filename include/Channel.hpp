@@ -80,6 +80,20 @@ public:
     }
 
     /**
+        @brief Get count of listeners
+    **/
+    inline size_t getListenerCount() const {
+        return m_listeners.size();
+    }
+
+    /**
+        @brief Get count of data
+    **/
+    inline size_t getDataCount() const {
+        return m_messages.size();
+    }
+
+    /**
         @brief Check is this channel active
         @return Active or not
     **/

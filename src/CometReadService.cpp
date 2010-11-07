@@ -178,7 +178,7 @@ void CometReadService::operator()(
         ));
 
         // We don't want Keep-Alive here
-        tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);
+        //tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);
         // Set the content type as text
         writer->getResponse().setContentType(HTTPTypes::CONTENT_TYPE_TEXT);
         // Do not send content length, because it is unknown now

@@ -13,6 +13,7 @@
 #include "Channel.hpp"
 #include "CometReadService.hpp"
 #include "CometWriteService.hpp"
+#include "CometStatusService.hpp"
 
 using namespace std;
 using namespace boost::asio;
@@ -161,10 +162,13 @@ int main(int argc, const char **argv)
 
         CometReadService read_service(channel_manager);
         CometWriteService write_service(channel_manager);
+        CometStatusService status_service(channel_manager);
 
         WebServer read_server(scheduler, read_endpoint);
         read_server.addService("/comet", 
             dynamic_cast<WebService *>(&read_service));
+        read_server.addService("/cometStatus", 
+            dynamic_cast<WebService *>(&status_service));
 
         WebServer write_server(scheduler, write_endpoint);
         write_server.addService("/comet", 

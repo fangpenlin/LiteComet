@@ -92,7 +92,7 @@ void CometWriteService::operator()(
     }
     
     // Close the connection once the request is done
-    tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);
+    //tcp_conn->setLifecycle(TCPConnection::LIFECYCLE_CLOSE);
     // Set the content type as text
     writer->getResponse().setContentType(HTTPTypes::CONTENT_TYPE_TEXT);
     // Send the response
