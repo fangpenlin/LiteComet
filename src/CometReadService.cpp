@@ -2,6 +2,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
+#include <pion/net/HTTPTypes.hpp>
 #include <pion/net/HTTPResponseWriter.hpp>
 #include <pion/net/PionUser.hpp>
 
@@ -109,18 +110,22 @@ void CometReadService::operator()(
         )
     );
     // Comet channel name
-    const string channel_name(request->getQuery("channel"));
+    const string channel_name(
+        HTTPTypes::url_decode(request->getQuery("channel")));
     // Java script callback
-    const string js_callback(request->getQuery("js_callback"));
+    const string js_callback(
+        HTTPTypes::url_decode(request->getQuery("js_callback")));
     // Offset of data
     long offset = Config::instance().NO_OFFSET;
     if(request->hasQuery("offset")) {
-        offset = lexical_cast<long>(request->getQuery("offset"));
+        offset = lexical_cast<long>(
+            HTTPTypes::url_decode(request->getQuery("offset")));
     }
     // Timeout of waiting time
     long timeout = Config::instance().CHANNEL_TIMEOUT;
     if(request->hasQuery("timeout")) {
-        timeout = lexical_cast<long>(request->getQuery("timeout"));
+        timeout = lexical_cast<long>(
+            HTTPTypes::url_decode(request->getQuery("timeout")));
     }
     // set timeout if it is zero
     if(!timeout) {

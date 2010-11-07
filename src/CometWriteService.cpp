@@ -1,5 +1,8 @@
+#include <vector>
+
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
+#include <boost/algorithm/string.hpp>
+#include <pion/net/HTTPTypes.hpp>
 #include <pion/net/HTTPResponseWriter.hpp>
 #include <pion/net/PionUser.hpp>
 
@@ -29,34 +32,56 @@ void CometWriteService::operator()(
             bind(&TCPConnection::finish, tcp_conn)
         )
     );
-    const string channel_name(request->getQuery("channel_name"));
-    const string type(request->getQuery("type"));
+    const string channel_names(
+        HTTPTypes::url_decode(request->getQuery("channels")));
+    const string type(HTTPTypes::url_decode(request->getQuery("type")));
+
+    typedef vector<string> ChannelList;
+    ChannelList channels;
+    split(channels, channel_names, is_any_of(","));
 
     if(type == "reset") {
-        ChannelManager::ChannelMap& map(m_channel_manager.getChannelMap());
-        ChannelManager::ChannelMap::iterator i = map.begin();
-        for(; i != map.end(); ++i) {
-            m_channel_manager.reset(i->first);
-            i->second->markActive();
+        ChannelList::const_iterator i = channels.begin();
+        for(; i != channels.end(); ++i) {
+            m_channel_manager.reset(*i);
+            m_channel_manager.getChannel(*i);
         }
-        PION_LOG_DEBUG(m_logger, "Reset all channels");
+        PION_LOG_DEBUG(m_logger, "Reset channels " << channel_names);
     } else if (type == "close") {
-        m_channel_manager.reset(channel_name);
-        PION_LOG_DEBUG(m_logger, "Close channel " << channel_name);
+        ChannelList::const_iterator i = channels.begin();
+        for(; i != channels.end(); ++i) {
+            m_channel_manager.reset(*i);
+        }
+        PION_LOG_DEBUG(m_logger, "Close channel " << channel_names);
     } else if (type == "is_active") {
-        // TODO test active and return here
+        stringstream s;
+        s << "{";
+        ChannelList::const_iterator i = channels.begin();
+        for(; i != channels.end(); ++i) {
+            if(m_channel_manager.isActive(*i)) {
+                s << "\"" << *i << "\": 1";
+            }
+        }
+        // TODO handle comma here
+        s << "}";
+        Response::ok(writer, s.str());
+        writer->send();
+        return;
     } else {
-        const string data(request->getQuery("data"));
+        const string data(HTTPTypes::url_decode(request->getQuery("data")));
         if(data.empty()) {
             // TODO: write bad request error herex
             writer->write("Bad request");
             writer->send();
             return;
         }
-        ChannelPtr channel = m_channel_manager.getChannel(channel_name);
-        PION_LOG_DEBUG(m_logger, "Add " << data.size() << 
-            " bytes data to channel \"" << channel_name << "\"");
-        channel->addData(data);
+        ChannelList::const_iterator i = channels.begin();
+        for(; i != channels.end(); ++i) {
+            ChannelPtr channel = m_channel_manager.getChannel(*i);
+            PION_LOG_DEBUG(m_logger, "Add " << data.size() << 
+                " bytes data to channel \"" << *i << "\"");
+            channel->addData(data);
+        }
     }
     
     // Close the connection once the request is done

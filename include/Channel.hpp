@@ -7,6 +7,7 @@
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "Message.hpp"
 
@@ -39,9 +40,13 @@ private:
     MessageList m_messages;
     /// List of listener to notify
     ListenerList m_listeners;
+    /// Last active time
+    boost::posix_time::ptime m_last_active;
 protected:
     // stop client from create Channel directly, use create() instead
-    Channel() {}
+    Channel() 
+        : m_last_active(boost::posix_time::microsec_clock::universal_time())
+    {}
 public:
     static inline boost::shared_ptr<Channel> create() {
         return boost::shared_ptr<Channel>(new Channel());
@@ -70,7 +75,9 @@ public:
     /**
         @brief Determine is this channel active
     **/
-    bool isActive(/*current date*/) const ;
+    inline boost::posix_time::ptime getLastActive() const {
+        return m_last_active;
+    }
 
     /**
         @brief Mark this channel as active

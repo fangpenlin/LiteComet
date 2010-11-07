@@ -79,12 +79,8 @@ long Channel::getCurrentOffset() const {
     return m_messages.back().getOffset();
 }
 
-bool Channel::isActive(/*current date*/) const {
-    return false;
-}
-
 void Channel::markActive() {
-
+    m_last_active = posix_time::microsec_clock::universal_time();
 }
 
 Channel::ListenerID Channel::addListener(Listener func) {

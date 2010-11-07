@@ -5,6 +5,7 @@
 #include <map>
 
 #include <boost/utility.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "Channel.hpp"
 
@@ -44,6 +45,16 @@ public:
         @param name of channel to reset
     **/
     void reset(const std::string&);
+
+    /**
+        @brief Determine is the channel active
+        @param name of channel to check
+        @return true if the channel is active, otherwise false
+    **/
+    bool isActive(const std::string&, boost::posix_time::ptime) const;
+
+    bool isActive(const std::string&) const;
+
 };
 
 }   // end namespace lite_comet

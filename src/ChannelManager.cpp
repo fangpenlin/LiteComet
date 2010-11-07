@@ -1,6 +1,8 @@
+#include "Config.hpp"
 #include "ChannelManager.hpp"
 
 using namespace std;
+using namespace boost::posix_time;
 
 namespace lite_comet {
 
@@ -20,6 +22,23 @@ ChannelManager::ChannelMap& ChannelManager::getChannelMap() {
 
 void ChannelManager::reset(const string& name) {
     m_channels.erase(name);
+}
+
+bool ChannelManager::isActive(const string& name, ptime cur) const {
+    ChannelMap::const_iterator i = m_channels.find(name);
+    if(i == m_channels.end()) {
+        return false;
+    }
+    ChannelPtr channel = i->second;
+    time_duration elapsed = cur - channel->getLastActive();//negative result
+    if(elapsed.total_milliseconds() <= Config::instance().CHANNEL_TIMEOUT*2) {
+        return true;
+    }
+    return false;
+}
+
+bool ChannelManager::isActive(const string& name) const {
+    return isActive(name, microsec_clock::universal_time());
 }
 
 }   // end namespace lite_comet 
