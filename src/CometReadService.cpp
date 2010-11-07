@@ -174,7 +174,7 @@ void CometReadService::operator()(
         timer->async_wait(
             bind(&CometReadService::notifyTimeout, this, 
                 writer, channel, timer, listener_id, placeholders::error,
-                channel_name, js_callback, offset
+                channel_name, js_callback, current_offset
         ));
 
         // We don't want Keep-Alive here
