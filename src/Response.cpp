@@ -1,5 +1,8 @@
 #include <sstream>
 
+#include <json/json.h>
+
+#include "Utils.hpp"
 #include "Response.hpp"
 
 using namespace std;
@@ -8,9 +11,9 @@ using namespace pion::net;
 
 namespace lite_comet {
 
-const string Response::INVALID_REQUEST("{'error': 'Invalid request'}");
+const string Response::INVALID_REQUEST("{\"error\": \"Invalid request\"}");
 const string Response::NOT_ACTIVE_CHANNEL(
-    "{'error': 'Not active channel (no listeners)'}");
+    "{\"error\": \"Not active channel (no listeners)\"}");
 const string Response::OK("{\"status\": \"ok\"}");
 
 void Response::ok(
@@ -54,11 +57,10 @@ void Response::empty(
     const string& callback, 
     bool with_headers
 ) {
-    stringstream data;
-    data << "{"
-        << "new_offset:" << new_offset
-    << "}";
-    Response::data(writer, data.str(), callback, with_headers);
+    Json::Value root;
+    root["new_offset"] = static_cast<Json::Int>(new_offset);
+    Json::FastWriter json_writer;
+    Response::data(writer, json_writer.write(root), callback, with_headers);
 }
 
 }   // end namespace lite_comet 

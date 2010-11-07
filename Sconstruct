@@ -5,9 +5,14 @@ env = Environment(
 env.Append(
     CPPPATH=[
         'include', 
+        'dependencies/jsoncpp-src-0.5.0/include',
         env.subst('$PION_HOME/net/include'), 
-        env.subst('$PION_HOME/common/include')
+        env.subst('$PION_HOME/common/include'),
     ], 
+    LIBPATH=[
+        'dependencies/jsoncpp-src-0.5.0/libs',
+        env.subst('$PION_HOME'),
+    ],
     LINKFLAGS=['-pthread'],
     LIBS=[
         'dl',
@@ -23,6 +28,7 @@ env.Append(
         'boost_iostreams-mt',
         'pion-net',
         'pion-common',
+        'json_libmt'
     ]
 )
 
@@ -31,15 +37,14 @@ SConscript([env.subst('$PION_HOME/Sconstruct')])
 # parse configuration for yaml-cpp
 env.ParseConfig('pkg-config --cflags --libs yaml-cpp')
 
-opt = env.Clone(CCFLAGS=['-pthread', '-O3', '-Wall', '-DNDEBUG'])
+opt = env.Clone()
+opt.Append(CCFLAGS=['-pthread', '-O3', '-Wall', '-DNDEBUG'])
 opt.VariantDir('opt', 'src', duplicate=0)
 opt_objs = opt.Glob('opt/*.cpp')
-lite_comet = opt.Program('lite_comet', 
-    opt_objs, LIBPATH=[opt.subst('$PION_HOME')])
+lite_comet = opt.Program('lite_comet', opt_objs)
 
-dbg = env.Clone(CCFLAGS=['-pthread', '-Wall', '-g', '-O0', '-DDEBUG', '-D_DEBUG'])
+dbg = env.Clone()
+dbg.Append(CCFLAGS=['-pthread', '-Wall', '-g', '-O0', '-DDEBUG', '-D_DEBUG'])
 dbg.VariantDir('dbg', 'src', duplicate=0)
 dbg_objs = dbg.Glob('dbg/*.cpp')
-dbg_lite_comet = dbg.Program('dbg_lite_comet', 
-    dbg_objs, LIBPATH=[dbg.subst('$PION_HOME')])
-
+dbg_lite_comet = dbg.Program('dbg_lite_comet', dbg_objs)

@@ -39,10 +39,10 @@ except KeyError:
 
 print "Building using PLATFORM =", platform
 
-rootbuild_dir = Dir('#buildscons')
-build_dir = os.path.join( '#buildscons', platform )
-bin_dir = os.path.join( '#bin', platform )
-lib_dir = os.path.join( '#libs', platform )
+rootbuild_dir = Dir('buildscons')
+build_dir = os.path.join( 'buildscons', platform )
+bin_dir = '#bin'
+lib_dir = '#libs'
 sconsign_dir_path = Dir(build_dir).abspath
 sconsign_path = os.path.join( sconsign_dir_path, '.sconsign.dbm' )
 
@@ -107,7 +107,7 @@ elif platform == 'mingw':
 elif platform.startswith('linux-gcc'):
     env.Tool( 'default' )
     env.Append( LIBS = ['pthread'], CCFLAGS = "-Wall" )
-    env['SHARED_LIB_ENABLED'] = True
+    env['SHARED_LIB_ENABLED'] = False
 else:
     print "UNSUPPORTED PLATFORM."
     env.Exit(1)
@@ -129,7 +129,7 @@ env['SHARED_LIB_ENABLED'] = env.get('SHARED_LIB_ENABLED', False)
 env['LIB_PLATFORM'] = short_platform
 env['LIB_LINK_TYPE'] = 'lib'    # static
 env['LIB_CRUNTIME'] = 'mt'
-env['LIB_NAME_SUFFIX'] = '${LIB_PLATFORM}_${LIB_LINK_TYPE}${LIB_CRUNTIME}'  # must match autolink naming convention
+env['LIB_NAME_SUFFIX'] = '${LIB_LINK_TYPE}${LIB_CRUNTIME}'  # must match autolink naming convention
 env['JSONCPP_VERSION'] = JSONCPP_VERSION
 env['BUILD_DIR'] = env.Dir(build_dir)
 env['ROOTBUILD_DIR'] = env.Dir(rootbuild_dir)

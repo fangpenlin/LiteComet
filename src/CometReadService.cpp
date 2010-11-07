@@ -5,8 +5,10 @@
 #include <pion/net/HTTPTypes.hpp>
 #include <pion/net/HTTPResponseWriter.hpp>
 #include <pion/net/PionUser.hpp>
+#include <json/json.h>
 
 #include "Config.hpp"
+#include "Utils.hpp"
 #include "CometReadService.hpp"
 #include "Response.hpp"
 
@@ -20,35 +22,15 @@ namespace lite_comet {
 
 // CometReadService member functions
 
-/**
-    @brief convert message range to string
-**/
-const string messagesToString(
-    Channel::MessageList::const_iterator begin, 
-    Channel::MessageList::const_iterator end
-) {
-    stringstream result;
-    result << "[";
-    Channel::MessageList::const_iterator i = begin; 
-    for(; i != end; ++i) {
-        result << "'" << (*i).getData() << "'";
-        if(next(i) != end) {
-            result << ",";
-        }
+Json::Value& operator << (Json::Value& value, const Channel::ChannelData& channel_data) {
+    value["new_offset"] = static_cast<Json::Int>(channel_data.get<0>());
+    Json::Value data;
+    Channel::MessageList::const_iterator i = channel_data.get<1>();
+    for(; i != channel_data.get<2>(); ++i) {
+        data.append((*i).getData());
     }
-    result << "]";
-    return result.str();
-}
-
-const string channelDataToString(
-    const Channel::ChannelData& data
-) {
-    stringstream result;
-    result << "{"
-        << "new_offset:" << data.get<0>() << ","
-        << "data:" << messagesToString(data.get<1>(), data.get<2>())
-    << "}";
-    return result.str();
+    value["data"] = data;
+    return value;
 }
 
 void CometReadService::notifyChannel(
@@ -70,7 +52,10 @@ void CometReadService::notifyChannel(
         Response::empty(writer, offset, js_callback);
     // write data back
     } else {
-        Response::data(writer, channelDataToString(new_data), js_callback);
+        Json::Value root;
+        root << new_data;
+        Json::FastWriter json_writer;
+        Response::data(writer, json_writer.write(root), js_callback);
     }
     writer->send(bind(&TCPConnection::finish, writer->getTCPConnection()));
 }
@@ -152,13 +137,21 @@ void CometReadService::operator()(
     if(new_data.get<0>() == Config::instance().NEEDS_RESYNC) {
         PION_LOG_DEBUG(m_logger, "Resync channel \"" << 
             channel_name << "\"");
-        Response::data(writer, channelDataToString(new_data), js_callback);
+
+        Json::Value root;
+        root << new_data;
+        Json::FastWriter json_writer;
+        Response::data(writer, json_writer.write(root), js_callback);
         writer->send(bind(&TCPConnection::finish, tcp_conn));
     // There is data to return immedinately
     } else if(new_data.get<1>() != new_data.get<2>()) {
         PION_LOG_DEBUG(m_logger, "Return instant data from channel \"" << 
             channel_name << "\"");
-        Response::data(writer, channelDataToString(new_data), js_callback);
+
+        Json::Value root;
+        root << new_data;
+        Json::FastWriter json_writer;
+        Response::data(writer, json_writer.write(root), js_callback);
         writer->send(bind(&TCPConnection::finish, tcp_conn));
     // We need to wait for more data here
     } else { 
