@@ -4,6 +4,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <pion/net/WebServer.hpp>
 #include <yaml.h>
 
@@ -15,6 +16,7 @@
 
 using namespace std;
 using namespace boost::asio;
+using namespace boost::posix_time;
 using namespace pion;
 using namespace pion::net;
 using namespace YAML;
@@ -152,7 +154,10 @@ int main(int argc, const char **argv)
         
         PION_LOG_INFO(main_log, "Number of threads: " << numThreads);
 
-        ChannelManager channel_manager;
+        ChannelManager channel_manager(
+            scheduler.getIOService(), 
+            milliseconds(Config::instance().CLEANUP_CYCLE));
+        channel_manager.startCleanup();
 
         CometReadService read_service(channel_manager);
         CometWriteService write_service(channel_manager);

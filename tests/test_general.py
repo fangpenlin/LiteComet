@@ -173,11 +173,11 @@ def send_req(method, args={}, port=READ_PORT):
     url = SERVER % (port, method)
     r_url = '%s?%s' % (url, urlencode(args))
     data = urlopen(r_url).read()
-    print data
+    #print data
     return json.loads(data)
 
 def write_channel(name, message, force=False):
-    print '#', 'write_channel(%s, %s, %s)' % (name, message, force)
+    #print '#', 'write_channel(%s, %s, %s)' % (name, message, force)
     data = {
         'channels': name,
         'data': json.dumps({'msg': message})
@@ -207,7 +207,7 @@ def is_active(name):
         return False
 
 def reset_channel(name):
-    print '#', 'reset_channel(%s)' % name
+    #print '#', 'reset_channel(%s)' % name
     response = send_req('comet', {
         'channels': name,
         'type': 'reset',
@@ -217,7 +217,7 @@ def reset_channel(name):
     return response
 
 def close_channel(name):
-    print '#', 'close_channel(%s)' % name
+    #print '#', 'close_channel(%s)' % name
     response = send_req('comet', {
         'channels': name,
         'type': 'close',
@@ -227,7 +227,7 @@ def close_channel(name):
     return response
 
 def read_channel(name, offset, timeout=50):
-    print '#', 'read_channel(%s, %s, %s)' % (name, offset, timeout)
+    #print '#', 'read_channel(%s, %s, %s)' % (name, offset, timeout)
     response = send_req('comet',
             { 'channel': name,
               'offset': offset,

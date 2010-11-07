@@ -6,6 +6,9 @@
 
 #include <boost/utility.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <pion/PionLogger.hpp>
 
 #include "Channel.hpp"
 
@@ -22,8 +25,20 @@ public:
     typedef std::map<std::string, ChannelPtr> ChannelMap;
 private:
     ChannelMap m_channels;
+    pion::PionLogger m_logger;
+    boost::asio::io_service& m_io_service;
+    boost::asio::deadline_timer m_timer;
+    boost::posix_time::time_duration m_period;
 public:
-    ChannelManager() {}
+    ChannelManager(
+        boost::asio::io_service& io_service, 
+        boost::posix_time::time_duration period
+    )
+        : m_logger(PION_GET_LOGGER("lite_comet.ChannelManager")),
+          m_io_service(io_service),
+          m_timer(io_service),
+          m_period(period)
+    {}
     ~ChannelManager() {}
 
     /**
@@ -55,6 +70,18 @@ public:
 
     bool isActive(const std::string&) const;
 
+    /**
+        @brief Start cleanup cycle
+    **/
+    void startCleanup() ;
+
+    /**
+        @brief Stop cleanup cycle
+    **/
+    void stopCleanup() ;
+
+ private:
+    void purgeExpired(const boost::system::error_code&) ;
 };
 
 }   // end namespace lite_comet

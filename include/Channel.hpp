@@ -80,6 +80,12 @@ public:
     }
 
     /**
+        @brief Check is this channel active
+        @return Active or not
+    **/
+    bool isActive(boost::posix_time::ptime) const ;
+
+    /**
         @brief Mark this channel as active
     **/
     void markActive() ;
@@ -96,7 +102,6 @@ public:
     **/
     void removeListener(ListenerID) ;
 
-private:
     /**
         @brief Notify all listeners attached to this channel
     **/

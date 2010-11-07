@@ -9,6 +9,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace boost::posix_time;
 
 namespace lite_comet {
 
@@ -82,6 +83,14 @@ long Channel::getCurrentOffset() const {
 
 void Channel::markActive() {
     m_last_active = posix_time::microsec_clock::universal_time();
+}
+
+bool Channel::isActive(posix_time::ptime cur) const {
+    time_duration elapsed = cur - getLastActive(); 
+    if(elapsed.total_milliseconds() <= Config::instance().CHANNEL_TIMEOUT*2) {
+        return true;
+    }
+    return false;
 }
 
 Channel::ListenerID Channel::addListener(Listener func) {
